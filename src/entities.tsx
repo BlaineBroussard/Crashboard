@@ -1,0 +1,209 @@
+export interface labor {
+  name: string;
+  costPerHour: number;
+  maximumHours: number;
+}
+
+export class Labor {
+  name: string;
+  costPerHour: number;
+  maximumHours: number;
+
+  constructor(name: string, costPerHour: number, maximumHours: number) {
+    this.name = name;
+    this.costPerHour = costPerHour;
+    this.maximumHours = maximumHours;
+  }
+
+  getValues(): labor {
+    return {
+      name: this.name,
+      costPerHour: this.costPerHour,
+      maximumHours: this.maximumHours,
+    };
+  }
+}
+
+export interface material {
+  name: string;
+  cost: number;
+  unit: number;
+}
+
+export class Material implements material {
+  name: string;
+  cost: number;
+  unit: number;
+
+  constructor(name: string, cost: number, unit: number) {
+    this.name = name;
+    this.cost = cost;
+    this.unit = unit;
+  }
+
+  // Returns all the material data as a plain object matching the interface
+  getValues(): material {
+    return {
+      name: this.name,
+      cost: this.cost,
+      unit: this.unit,
+    };
+  }
+
+  getCostPerUnit(): number {
+    if (this.unit === 0) return 0;
+    return this.cost / this.unit;
+  }
+}
+
+export interface fixedExpense {
+  name: string;
+  costPerMonth: number;
+}
+export class FixedExpense {
+  name: string;
+  costPerMonth: number;
+
+  constructor(name: string, costPerHour: number, maximumHours: number) {
+    this.name = name;
+    this.costPerMonth = costPerHour;
+  }
+
+  getValues(): fixedExpense {
+    return {
+      name: this.name,
+      costPerMonth: this.costPerMonth,
+    };
+  }
+}
+
+export interface Labor {
+  costPerHour: number;
+  role?: string;
+}
+
+export interface product {
+  name: string;
+  price: number;
+  material: material[];
+  labor: Labor;
+  laborHours: number;
+  soldTotal: number;
+  marketingAcquisitionCost?: number;
+}
+
+export class Product implements product {
+  name: string;
+  price: number;
+  material: Material[];
+  labor: Labor;
+  laborHours: number;
+  soldTotal: number;
+  marketingAcquisitionCost?: number;
+
+  constructor(
+    name: string,
+    price: number,
+    material: Material[],
+    labor: Labor,
+    laborHours: number,
+    soldTotal: number,
+    marketingAcquisitionCost?: number,
+  ) {
+    this.name = name;
+    this.price = price;
+    this.material = material;
+    this.labor = labor;
+    this.laborHours = laborHours;
+    this.soldTotal = soldTotal;
+    this.marketingAcquisitionCost = marketingAcquisitionCost;
+  }
+
+  getValues(): product {
+    return {
+      name: this.name,
+      price: this.price,
+      material: this.material,
+      labor: this.labor,
+      laborHours: this.laborHours,
+      soldTotal: this.soldTotal,
+      marketingAcquisitionCost: this.marketingAcquisitionCost,
+    };
+  }
+
+  sumMaterialsCost = (materials: Material[]): number => {
+    let total = 0;
+    materials.forEach((material) => {
+      total = total + material.cost * material.unit;
+    });
+    return total;
+  };
+
+  getGrossProfit(): number {
+    return (
+      this.price -
+      (this.labor.costPerHour * this.laborHours +
+        this.sumMaterialsCost(this.material)) -
+      (this.marketingAcquisitionCost ?? 0)
+    );
+  }
+
+  getGrossProfitPercentage(): number {
+    if (this.price === 0) return 0;
+    return (this.getGrossProfit() / this.price) * 100;
+  }
+}
+
+interface Ibusiness {
+  Products: Product[];
+  FixedExpenses: FixedExpense[];
+  Materials: Material[];
+  Labors: Labor[];
+}
+
+export class Business implements Ibusiness {
+  Products: Product[];
+  FixedExpenses: FixedExpense[];
+  Materials: Material[];
+  Labors: Labor[];
+
+  constructor(
+    Products: Product[],
+    FixedExpenses: FixedExpense[],
+    Materials: Material[],
+    Labors: Labor[],
+  ) {
+    this.Products = Products;
+    this.FixedExpenses = FixedExpenses;
+    this.Materials = Materials;
+    this.Labors = Labors;
+  }
+
+  getValues(): Ibusiness {
+    return {
+      Products: this.Products,
+      FixedExpenses: this.FixedExpenses,
+      Materials: this.Materials,
+      Labors: this.Labors,
+    };
+  }
+
+  sumFixedExpenses = (expenses: FixedExpense[]): number => {
+    let total = 0;
+    expenses.forEach((expense) => {
+      total = total + expense.costPerMonth;
+    });
+    return total;
+  };
+
+  sumGrossProfit = (products: Product[]): number => {
+    return products.reduce(
+      (totalProfit, product) => totalProfit + product.getGrossProfit(),
+      0,
+    );
+  };
+
+  calculateNetProfit = (products: Product[], fixedExpenses: FixedExpense[]) => {
+    return this.sumGrossProfit(products) - this.sumFixedExpenses(fixedExpenses);
+  };
+}
