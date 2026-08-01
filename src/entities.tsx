@@ -64,9 +64,9 @@ export class FixedExpense {
   name: string;
   costPerMonth: number;
 
-  constructor(name: string, costPerHour: number, maximumHours: number) {
+  constructor(name: string, costPerMonth: number, _maximumHours?: number) {
     this.name = name;
-    this.costPerMonth = costPerHour;
+    this.costPerMonth = costPerMonth;
   }
 
   getValues(): fixedExpense {
@@ -82,12 +82,16 @@ export interface Labor {
   role?: string;
 }
 
+export interface productLabor {
+  labor: Labor;
+  quantity: number;
+}
+
 export interface product {
   name: string;
   price: number;
   material: material[];
-  labor: Labor;
-  laborHours: number;
+  labor: productLabor[];
   soldTotal: number;
   marketingAcquisitionCost?: number;
 }
@@ -96,8 +100,7 @@ export class Product implements product {
   name: string;
   price: number;
   material: Material[];
-  labor: Labor;
-  laborHours: number;
+  labor: productLabor[];
   soldTotal: number;
   marketingAcquisitionCost?: number;
 
@@ -105,8 +108,7 @@ export class Product implements product {
     name: string,
     price: number,
     material: Material[],
-    labor: Labor,
-    laborHours: number,
+    labor: productLabor[],
     soldTotal: number,
     marketingAcquisitionCost?: number,
   ) {
@@ -114,7 +116,6 @@ export class Product implements product {
     this.price = price;
     this.material = material;
     this.labor = labor;
-    this.laborHours = laborHours;
     this.soldTotal = soldTotal;
     this.marketingAcquisitionCost = marketingAcquisitionCost;
   }
@@ -125,7 +126,6 @@ export class Product implements product {
       price: this.price,
       material: this.material,
       labor: this.labor,
-      laborHours: this.laborHours,
       soldTotal: this.soldTotal,
       marketingAcquisitionCost: this.marketingAcquisitionCost,
     };
@@ -139,11 +139,16 @@ export class Product implements product {
     return total;
   };
 
+  sumLaborCost = (laborEntries: productLabor[]): number => {
+    return laborEntries.reduce((total, entry) => {
+      return total + entry.labor.costPerHour * entry.quantity;
+    }, 0);
+  };
+
   getGrossProfit(): number {
     return (
       this.price -
-      (this.labor.costPerHour * this.laborHours +
-        this.sumMaterialsCost(this.material)) -
+      (this.sumLaborCost(this.labor) + this.sumMaterialsCost(this.material)) -
       (this.marketingAcquisitionCost ?? 0)
     );
   }

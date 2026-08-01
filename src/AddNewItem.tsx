@@ -1,20 +1,35 @@
 import { Button, Stack, TextField } from "@mui/material";
-import { useState, type ChangeEvent } from "react";
-import { Material } from "./entities";
+import { useEffect, useState, type ChangeEvent } from "react";
 
 interface AddNewItemProps<T> {
   createEmptyItem: () => T;
+  items: T[];
+  onItemsChange: (items: T[]) => void;
 }
+
 export default function AddNewItems<T extends Record<string, any>>({
   createEmptyItem,
+  items,
+  onItemsChange,
 }: AddNewItemProps<T>) {
-  const [items, setItems] = useState<T[]>([]);
+  const [localItems, setLocalItems] = useState<T[]>(items);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [form, setForm] = useState<T>(createEmptyItem());
 
+  useEffect(() => {
+    setLocalItems(items);
+  }, [items]);
+
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const fieldName = name as keyof T;
+
+    setForm((prev) => {
+      const currentValue = prev[fieldName];
+      const nextValue =
+        typeof currentValue === "number" ? Number(value) : value;
+      return { ...prev, [fieldName]: nextValue };
+    });
   };
 
   const resetForm = () => {
@@ -23,20 +38,31 @@ export default function AddNewItems<T extends Record<string, any>>({
   };
 
   const handleAddItem = () => {
-    if (editingIndex !== null) {
-      setItems((current) =>
-        current.map((item, index) => (index === editingIndex ? form : item)),
-      );
-    } else {
-      setItems((current) => [...current, form]);
-    }
+    const nextItems =
+      editingIndex !== null
+        ? localItems.map((item, index) =>
+            index === editingIndex ? form : item,
+          )
+        : [...localItems, form];
 
+    setLocalItems(nextItems);
+    onItemsChange(nextItems);
     resetForm();
   };
 
   const handleEditItem = (item: T, index: number) => {
     setForm(item);
     setEditingIndex(index);
+  };
+
+  const handleDeleteItem = (index: number) => {
+    const nextItems = localItems.filter((_, itemIndex) => itemIndex !== index);
+    setLocalItems(nextItems);
+    onItemsChange(nextItems);
+
+    if (editingIndex === index) {
+      resetForm();
+    }
   };
 
   return (
@@ -52,7 +78,7 @@ export default function AddNewItems<T extends Record<string, any>>({
       ))}
 
       <Button variant="contained" onClick={handleAddItem}>
-        {editingIndex === null ? "Add Material" : "Save Changes"}
+        {editingIndex === null ? "Add Item" : "Save Changes"}
       </Button>
       {editingIndex !== null && (
         <Button variant="text" onClick={resetForm}>
@@ -60,15 +86,15 @@ export default function AddNewItems<T extends Record<string, any>>({
         </Button>
       )}
 
-      {items.length > 0 && (
+      {localItems.length > 0 && (
         <ul>
-          {items.map((item, index) => (
-            <li>
+          {localItems.map((item, index) => (
+            <li key={index}>
               {Object.entries(item).map(([key, value]) => (
                 <span key={key} style={{ marginRight: "1rem" }}>
                   <strong>{key}:</strong>{" "}
                   {Array.isArray(value)
-                    ? value.length //
+                    ? value.length
                     : typeof value === "object" && value !== null
                       ? JSON.stringify(value)
                       : String(value)}
@@ -81,6 +107,15 @@ export default function AddNewItems<T extends Record<string, any>>({
                 sx={{ ml: 1 }}
               >
                 Edit
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={() => handleDeleteItem(index)}
+                sx={{ ml: 1 }}
+              >
+                Delete
               </Button>
             </li>
           ))}
