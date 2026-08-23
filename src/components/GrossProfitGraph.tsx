@@ -5,7 +5,7 @@ import { LineChart } from "@mui/x-charts/LineChart";
 
 const BUSINESS_STORAGE_KEY = "crashboard-business";
 
-export default function NetProfitGraph() {
+export default function GrossProfitGraph() {
   const [business] = useState<Business>(() => {
     try {
       const saved = localStorage.getItem(BUSINESS_STORAGE_KEY);
@@ -39,15 +39,16 @@ export default function NetProfitGraph() {
   // Compute chart data: 10 fixed-expense intervals (0..max) and net profit at each
   const { xLabels, yValues } = useMemo(() => {
     const intervals = 10;
-    const fixedExpensesTotal = business.sumFixedExpenses(
-      business.FixedExpenses,
+    const quantityProductsTotal = business.Products.reduce(
+      (sum, product) => sum + product.soldTotal,
+      0,
     );
     const totalGrossProfit = business.sumGrossProfit(business.Products);
 
     // If there are no fixed expenses recorded, choose a reasonable max for the x-axis
     const maxFixed =
-      fixedExpensesTotal > 0
-        ? fixedExpensesTotal
+      quantityProductsTotal > 0
+        ? quantityProductsTotal
         : Math.max(100, Math.ceil(Math.abs(totalGrossProfit) * 1.2));
 
     const x: number[] = [];
@@ -69,18 +70,20 @@ export default function NetProfitGraph() {
   return (
     <Paper sx={{ p: 2 }} elevation={2}>
       <Box sx={{ width: "100%", height: 320 }}>
-        <Typography sx={{ mb: 1 }}>Net profit vs Fixed expenses</Typography>
+        <Typography sx={{ mb: 1 }}>
+          Gross profit vs Quantity Products
+        </Typography>
         <LineChart
           height={240}
           margin={{ bottom: 40 }}
           series={[
-            { data: yValues, label: "Net Profit", yAxisId: "leftAxisId" },
+            { data: yValues, label: "Gross Profit", yAxisId: "leftAxisId" },
           ]}
           xAxis={[
             {
               scaleType: "point",
               data: xLabels,
-              label: "Fixed Expenses",
+              label: "Quantity Products",
             },
           ]}
           yAxis={[{ id: "leftAxisId", width: 60 }]}

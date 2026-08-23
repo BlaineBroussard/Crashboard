@@ -15,6 +15,10 @@ export class Labor {
     this.maximumHours = maximumHours;
   }
 
+  getLaborCost(): number {
+    return this.costPerHour * this.maximumHours;
+  }
+
   getValues(): labor {
     return {
       name: this.name,
@@ -206,6 +210,29 @@ export class Business implements Ibusiness {
       (totalProfit, product) => totalProfit + product.getGrossProfit(),
       0,
     );
+  };
+
+  averageGrossProfit = (products: Product[]): number => {
+    if (!products || products.length === 0) return 0;
+    const total = this.sumGrossProfit(products);
+    return total / products.length;
+  };
+
+  // Total labor hours across all provided products (per-unit hours summed)
+  sumLaborHours = (products: Product[]): number => {
+    return products.reduce((totalHours, product) => {
+      const productHours = product.labor.reduce((h, entry) => h + (entry.quantity ?? 0), 0);
+      return totalHours + productHours;
+    }, 0);
+  };
+
+  // Average gross profit per one hour of labor across all products.
+  // Computes total gross profit (per-unit) divided by total labor hours (per-unit).
+  averageGrossProfitPerHour = (products: Product[]): number => {
+    const totalHours = this.sumLaborHours(products);
+    if (totalHours === 0) return 0;
+    const totalGross = this.sumGrossProfit(products);
+    return totalGross / totalHours;
   };
 
   calculateNetProfit = (products: Product[], fixedExpenses: FixedExpense[]) => {
